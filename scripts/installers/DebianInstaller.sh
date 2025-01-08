@@ -161,33 +161,37 @@ done
 #
 #Get the user to agree to the conditions of using this script before continuing.
 function UserAcceptedConditions() {
-  Disclaimer="${RED}
-************************************************************************************************************************
-** ${NC}                                                                                                                   ${RED}**
-** ${GREEN}                                           Automatic Ripping Machine (ARM)                                         ${RED}**
-** ${GREEN}                                           Installation Script for Debian                                          ${RED}**
-** ${YELLOW}  WARNING - ${NC}This installation method is no longer supported by the ARM development team. This script is provided   ${RED}**
-** ${NC} as is, without support.  If you experience issues with your ARM installation, you will need to reproduce it using ${RED}**
-** ${NC} an official ARM docker image before opening up an Issue on GitHub.  The installation instructions for ARM using   ${RED}**
-** ${NC} Docker can be found here: https://github.com/automatic-ripping-machine/automatic-ripping-machine/wiki/docker      ${RED}**
-** ${NC}                                                                                                                   ${RED}**
-** ${NC} ARM uses MakeMKV. As of January 2025, MakeMKV is still in Beta and free to use while in Beta.                     ${RED}**
-** ${NC} You may, optionally, purchase a licence for MakeMKV at https://makemkv.com/buy/ Once purchased, you can go into   ${RED}**
-** ${NC} the ARM settings and paste in your key.  Instructions for entering your permanent key for MakeMKV in ARM can      ${RED}**
-** ${NC} be found here: https://github.com/automatic-ripping-machine/automatic-ripping-machine/wiki/MakeMKV-Info           ${RED}**
-** ${NC}                                                                                                                   ${RED}**
-** ${NC} ARM is Open Source software licenced with the MIT licence:                                                        ${RED}**
-** ${NC} https://github.com/automatic-ripping-machine/automatic-ripping-machine/blob/main/LICENSE                          ${RED}**
-** ${NC}                                                                                                                   ${RED}**
-************************************************************************************************************************
+  #TODO Replace this with a Whiptail implementation.
+  # How To Use Whiptail: https://www.redhat.com/en/blog/use-whiptail
+  local Disclaimer Licence
+  Disclaimer="
+                                       Automatic Ripping Machine (ARM)
+                                       Installation Script for Debian
+WARNING - This installation method is no longer supported by the ARM development team. This script is provided
+as is, without support.  If you experience issues with your ARM installation, you will need to reproduce it using
+an official ARM docker image before opening up an Issue on GitHub.  The installation instructions for ARM using
+Docker can be found here: https://github.com/automatic-ripping-machine/automatic-ripping-machine/wiki/docker
 
-${BLUE} Do you wish to proceed with this unsupported installation? Y/n :${NC}
+ARM uses MakeMKV. As of January 2025, MakeMKV is still in Beta and free to use while in Beta.
+You may, optionally, purchase a licence for MakeMKV at https://makemkv.com/buy/ Once purchased, you can go into
+the ARM settings and paste in your key.  Instructions for entering your permanent key for MakeMKV in ARM can
+be found here: https://github.com/automatic-ripping-machine/automatic-ripping-machine/wiki/MakeMKV-Info
+
+Do you wish to proceed with this unsupported installation?
 "
+
+
+  Licence=$(curl https://raw.githubusercontent.com/automatic-ripping-machine/automatic-ripping-machine/refs/heads/main/LICENSE -s)
 
   if ! IsUserAnsweredYesToPrompt "${Disclaimer}" ; then
     echo -e "${RED} Exiting Installation Script, No changes were made...${NC}"
     exit ${ERROR_USER_DID_NOT_ACCEPT_SCRIPT_DISCLAIMER}
+  elif ! IsUserAnsweredYesToPrompt "${Licence}" ; then
+    echo -e "${RED} Exiting Installation Script, No changes were made...${NC}"
+    exit ${ERROR_USER_DID_NOT_ACCEPT_SCRIPT_DISCLAIMER}
   fi
+
+
 }
 
 #Function to confirm that the sudo package is installed. (Not eccentrically true for LXC containers.)
@@ -201,6 +205,8 @@ function IsSudoInstalled() {
     false
   fi
 }
+
+#TODO Add function to check for presence of Whiptail
 
 #Determine if we are effectively a root user.  Return boolean values 'true' or 'false'.
 #If the function is about to return false, the function exits the script with the
@@ -258,18 +264,21 @@ function RepositoryExists() {
 }
 
 function IsUserAnsweredYesToPrompt() {
+  #TODO Refactor this to use Whiptail YesNo Prompt.
   local Prompt=$1
   local Response
-  echo ""
-  read -p "$(echo -e "${Prompt}")" -r Response
-  echo -e ""
-  if [[ "${Response}" == "y" || "${Response}" == "Y" ]] ; then
-    echo ""
-    true
-  else
-    echo ""
-    false
-  fi
+  #echo ""
+  #read -p "$(echo -e "${Prompt}")" -r Response
+  #echo -e ""
+  #if [[ "${Response}" == "y" || "${Response}" == "Y" ]] ; then
+  #  echo ""
+  #  true
+  #else
+  #  echo ""
+  #  false
+  #fi
+
+  whiptail --backtitle "Automatic Ripping Machine -- Debian 12 Bare Metal Installer" --title "Accept Disclaimer" --yesno "${Prompt}" 25 120;
 
 }
 
@@ -407,7 +416,7 @@ function ServiceExists() {
 }
 
 function FoundPreviousInstallation() {
-  ##TODO There is an error here that I need to track down.
+  ##TODO Add checking for Docker / Podman installation of ARM
   if ServiceExists armui  ; then
     echo "Found Armui Service"
     if systemctl is-active --quiet armui ; then
